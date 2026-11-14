@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletReadyState, type WalletName } from "@solana/wallet-adapter-base";
 import { GET_WALLET, OPEN_IN, isMobileBrowser } from "./open-in";
@@ -15,14 +16,26 @@ export function ConnectSheet({ mobile: forcedMobile }: { mobile?: boolean }) {
   const [note, setNote] = useState("");
   const trigger = useRef<HTMLButtonElement>(null);
   const closeBtn = useRef<HTMLButtonElement>(null);
+  const sheet = useRef<HTMLDivElement>(null);
 
-  const close = () => { setOpen(false); setPending(null); trigger.current?.focus(); };
+  const close = () => { setOpen(false); setPending(null); };
+  // Modal: the sheet renders outside #root, the page behind it is inert, and Tab cycles inside the sheet.
   useEffect(() => {
     if (!open) return;
+    const root = document.getElementById("root");
+    root?.setAttribute("inert", "");
     closeBtn.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { close(); return; }
+      if (e.key !== "Tab" || !sheet.current) return;
+      const items = [...sheet.current.querySelectorAll<HTMLElement>("button:not([disabled]), a[href]")];
+      if (items.length === 0) return;
+      const first = items[0], last = items[items.length - 1], at = document.activeElement;
+      if (e.shiftKey && (at === first || !sheet.current.contains(at))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (at === last || !sheet.current.contains(at))) { e.preventDefault(); first.focus(); }
+    };
     addEventListener("keydown", onKey);
-    return () => removeEventListener("keydown", onKey);
+    return () => { removeEventListener("keydown", onKey); root?.removeAttribute("inert"); trigger.current?.focus(); };
   }, [open]);
   useEffect(() => { if (connected) { setOpen(false); setPending(null); } }, [connected]);
   // After a wallet is selected, ask it to connect; its own prompt is the approval.
@@ -45,9 +58,9 @@ export function ConnectSheet({ mobile: forcedMobile }: { mobile?: boolean }) {
   return (
     <>
       <button ref={trigger} type="button" className="button button-primary button-small connect" onClick={() => { setNote(""); setOpen(true); }}>Connect</button>
-      {open && (
+      {open && createPortal(
         <div className="sheet-bg" onClick={close}>
-          <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" onClick={(e) => e.stopPropagation()}>
+          <div ref={sheet} className="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-head">
               <h2 id="sheet-title">Connect a Solana wallet</h2>
               <button ref={closeBtn} type="button" className="x" aria-label="Close" onClick={close}>×</button>
@@ -80,7 +93,8 @@ export function ConnectSheet({ mobile: forcedMobile }: { mobile?: boolean }) {
             </p>
             {note && <p className="error" role="alert">{note}</p>}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

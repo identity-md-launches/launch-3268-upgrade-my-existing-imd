@@ -5,7 +5,7 @@
 import { Connection, Keypair, PublicKey, type Transaction, type VersionedTransaction } from "@solana/web3.js";
 import BN from "bn.js";
 import {
-  ALL_PROGRAM_ID, DEVNET_PROGRAM_ID, LaunchpadConfig, Raydium, TxVersion, getPdaLaunchpadConfigId, getPdaLaunchpadPoolId,
+  ALL_PROGRAM_ID, DEVNET_PROGRAM_ID, LaunchpadConfig, LaunchpadPool, LaunchpadVesting, Raydium, TxVersion, getPdaLaunchpadConfigId, getPdaLaunchpadPoolId, getPdaVestId,
 } from "@raydium-io/raydium-sdk-v2";
 import type { ClusterId } from "../config";
 import { CLUSTERS } from "../config";
@@ -52,6 +52,50 @@ export async function createLaunch(connection: Connection, cluster: ClusterId, o
   });
   const { txIds } = await execute({ sequentially: true });
   return { mint: mintKeypair.publicKey.toBase58(), poolId: extInfo.address.poolId.toBase58(), txIds };
+}
+
+/**
+ * The 1% developer allocation. createLaunchpad only reserves it (the pool's totalLockedAmount); the tokens belong
+ * to nobody until the creator signs create_vesting_account, which writes a vesting record naming the beneficiary.
+ */
+export type DevAllocation = {
+  status: "allocated" | "pending"; record: string; beneficiary: string; reserved: bigint; allocated: bigint; recordShare: bigint;
+};
+
+export async function readDevAllocation(connection: Connection, cluster: ClusterId, mint: string, beneficiary: PublicKey): Promise<DevAllocation | null> {
+  const { programId } = programs(cluster);
+  const poolId = poolIdFor(cluster, mint);
+  const poolAcc = await connection.getAccountInfo(poolId);
+  if (!poolAcc) return null;
+  const { vestingSchedule } = LaunchpadPool.decode(poolAcc.data);
+  const record = getPdaVestId(programId, poolId, beneficiary).publicKey;
+  const recAcc = await connection.getAccountInfo(record);
+  let recordShare = 0n;
+  if (recAcc && recAcc.owner.equals(programId)) {
+    const v = LaunchpadVesting.decode(recAcc.data);
+    if (v.poolId.equals(poolId) && v.beneficiary.equals(beneficiary)) recordShare = BigInt(v.tokenShareAmount.toString());
+  }
+  const reserved = BigInt(vestingSchedule.totalLockedAmount.toString());
+  return {
+    status: reserved > 0n && recordShare >= reserved ? "allocated" : "pending", record: record.toBase58(), beneficiary: beneficiary.toBase58(),
+    reserved, allocated: BigInt(vestingSchedule.totalAllocatedShare.toString()), recordShare,
+  };
+}
+
+/** Assigns the reserved, still unallocated share to the creator wallet. The wallet shows the transaction for approval. */
+export async function allocateDeveloper(connection: Connection, cluster: ClusterId, owner: PublicKey, signAll: SignAll, mint: string): Promise<string> {
+  const { programId } = programs(cluster);
+  const poolId = poolIdFor(cluster, mint);
+  // A pool created moments ago can lag behind on the RPC node; wait up to 30 s for it.
+  for (let i = 0; i < 15 && !(await connection.getAccountInfo(poolId)); i++) await new Promise((r) => setTimeout(r, 2000));
+  const raydium = await load(connection, cluster, owner, signAll);
+  const { vestingSchedule, creator } = await raydium.launchpad.getRpcPoolInfo({ poolId });
+  if (!creator.equals(owner)) throw new Error("Only the wallet that created this token can assign its developer allocation.");
+  const share = vestingSchedule.totalLockedAmount.sub(vestingSchedule.totalAllocatedShare);
+  if (share.lten(0)) throw new Error("The reserved allocation is already assigned.");
+  const { execute } = await raydium.launchpad.createVesting({ programId, poolId, beneficiary: owner, shareAmount: share, txVersion: TxVersion.V0 });
+  const { txId } = await execute({ sendAndConfirm: true });
+  return txId;
 }
 
 export type CurveState = {

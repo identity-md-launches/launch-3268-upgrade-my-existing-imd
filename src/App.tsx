@@ -9,7 +9,7 @@ import { Watchlist, loadWatchlist, saveWatchlist, type Watch } from "./component
 import { Revenue } from "./components/Revenue";
 import { loadPlan, savePlan, type Plan } from "./lib/plan";
 import type { LaunchForm as LaunchDraft } from "./lib/launchParams";
-import { IMD_NFT_CONTRACT } from "./config";
+import { IMD_NFT_CONTRACT, type ClusterId } from "./config";
 
 const WORKERS = [
   { role: "Project director", job: "Scopes the brief, sets milestones and routes work to the other workers." },
@@ -51,8 +51,8 @@ function Page() {
     setDraft({ name: p.name, symbol: p.ticker, supply: String(p.supply), description: p.idea.slice(0, 500), initialBuySol: p.initialBuySol ? String(p.initialBuySol) : "" });
     goto("launch", "name");
   };
-  const onLaunched = (mint: string, label: string) => {
-    setWatch((w) => (w.some((x) => x.mint === mint) ? w : [{ mint, label }, ...w]));
+  const onLaunched = (mint: string, label: string, cluster: ClusterId) => {
+    setWatch((w) => (w.some((x) => x.mint === mint && x.cluster === cluster) ? w : [{ mint, label, cluster }, ...w]));
     setTradeMint(mint);
   };
   const onTrade = (mint: string) => { setTradeMint(mint); goto("trade", "trade-mint"); };
@@ -88,7 +88,7 @@ function Page() {
             <div className="split split-top split-wide-first">
               <LaunchForm draft={draft} onLaunched={onLaunched} />
               <ol className="steps card">
-                <li><h3>A transparent 1% developer allocation</h3><p>Every launch reserves 1% of supply for the creator wallet as a LaunchLab vesting allocation, shown in the review before you sign.</p></li>
+                <li><h3>A transparent 1% developer allocation</h3><p>Every launch reserves 1% of supply in LaunchLab, shown in the review before you sign. A second approval assigns it to the creator wallet as a vesting record, which the page reads back from Solana before calling it allocated.</p></li>
                 <li><h3>An optional initial purchase</h3><p>The developer can make a separate first buy with their own SOL, in the same signing step as the creation.</p></li>
                 <li><h3>Trading opens on the curve</h3><p>Price follows the curve as people buy and sell, with liquidity held by the LaunchLab program.</p></li>
                 <li><h3>Graduation to a Raydium pool</h3><p>At the graduation target, liquidity moves into a Raydium pool for open trading.</p></li>

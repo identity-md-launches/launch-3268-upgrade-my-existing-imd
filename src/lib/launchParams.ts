@@ -34,7 +34,12 @@ export const EMPTY_LAUNCH: LaunchForm = {
 
 const URL_RE = /^(https:\/\/|ipfs:\/\/|ar:\/\/)[^\s]+$/i;
 const okUrl = (v: string) => v.trim() === "" || URL_RE.test(v.trim());
-const num = (v: string) => (v.trim() === "" ? 0 : Number(v));
+/** Plain decimals only ("12", "0.5", ".5"): Number() would also accept "1e-3", "0x10" or "-", which BigInt cannot. */
+const DECIMAL_RE = /^(\d+\.?\d*|\.\d+)$/;
+const WHOLE_RE = /^\d+$/;
+export const isDecimal = (v: string) => DECIMAL_RE.test(v.trim());
+const num = (v: string) => (v.trim() === "" ? 0 : DECIMAL_RE.test(v.trim()) ? Number(v) : NaN);
+const whole = (v: string) => (v.trim() === "" ? 0 : WHOLE_RE.test(v.trim()) ? Number(v) : NaN);
 
 export function validateLaunch(f: LaunchForm): LaunchErrors {
   const e: LaunchErrors = {};
@@ -53,7 +58,7 @@ export function validateLaunch(f: LaunchForm): LaunchErrors {
   const sp = num(f.sellPercent);
   if (!Number.isFinite(sp) || sp < 20 || sp > 90) e.sellPercent = "Sell from 20% to 90% of supply on the curve.";
   else if (sp + DEV_ALLOCATION_PERCENT > 95) e.sellPercent = "Leave at least 4% of supply for the Raydium pool after graduation.";
-  const cl = num(f.cliffDays), un = num(f.unlockDays);
+  const cl = whole(f.cliffDays), un = whole(f.unlockDays);
   if (!Number.isInteger(cl) || cl < 0 || cl > 365) e.cliffDays = "Enter whole days from 0 to 365.";
   if (!Number.isInteger(un) || un < 0 || un > 1460) e.unlockDays = "Enter whole days from 0 to 1,460.";
   const b = num(f.initialBuySol);
@@ -74,7 +79,7 @@ export type LaunchNumbers = {
   cliffSeconds: bigint; unlockSeconds: bigint; buyLamports: bigint; slippageBps: bigint;
 };
 
-/** The exact integers sent to LaunchLab, so the review screen and the transaction never disagree. */
+/** The exact integers sent to LaunchLab, so the review screen and the transaction never disagree. Call only on a form validateLaunch accepts. */
 export function launchNumbers(f: LaunchForm): LaunchNumbers {
   const supply = BigInt(parseWhole(f.supply)) * 10n ** BigInt(TOKEN_DECIMALS);
   const sellBps = BigInt(Math.round(num(f.sellPercent) * 100));

@@ -3,10 +3,11 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { Field } from "./Field";
 import { TxList } from "./LaunchForm";
 import { MarketCard } from "./Watchlist";
+import { DevAllocation } from "./DevAllocation";
 import { useNetwork } from "../wallet/SolanaProvider";
 import { CLUSTERS } from "../config";
 import { isAddress, raydiumSwap, verifyTransaction, walletErrorText, type TxCheck } from "../lib/solana";
-import { TOKEN_DECIMALS, toUnits, fromUnits } from "../lib/launchParams";
+import { TOKEN_DECIMALS, isDecimal, toUnits, fromUnits } from "../lib/launchParams";
 import type { CurveState } from "../lib/launchlab";
 
 const POLL_MS = 15000;
@@ -78,7 +79,7 @@ export function TradePanel({ mint: preset }: { mint: string }) {
   }
   async function trade(e: FormEvent) {
     e.preventDefault();
-    const a = Number(amount), s = Number(slip);
+    const a = isDecimal(amount) ? Number(amount) : NaN, s = isDecimal(slip) ? Number(slip) : NaN;
     if (!Number.isFinite(a) || a <= 0) { setTradeErr(side === "buy" ? "Enter how much SOL to spend." : "Enter how many tokens to sell."); return; }
     if (!Number.isFinite(s) || s <= 0 || s > 50) { setTradeErr("Enter slippage above 0% and up to 50%."); return; }
     if (!publicKey || !signAllTransactions) return;
@@ -139,6 +140,9 @@ export function TradePanel({ mint: preset }: { mint: string }) {
             {tradeErr && <p className="error" role="alert">{tradeErr}</p>}
           </form>
         </div>
+      )}
+      {curve && publicKey && curve.creator === publicKey.toBase58() && (
+        <div className="stack"><h3>Your developer allocation</h3><DevAllocation mint={mint} /></div>
       )}
       {checks.length > 0 && <TxList checks={checks} />}
       {mint && cluster === "mainnet-beta" && <MarketCard mint={mint} />}

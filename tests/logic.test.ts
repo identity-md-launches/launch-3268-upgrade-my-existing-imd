@@ -29,6 +29,14 @@ describe("launch parameters", () => {
     expect(e.name && e.symbol && e.metadataUri).toBeTruthy();
     expect(validateLaunch({ ...ok, supply: "1000" }).supply).toBeTruthy();
     expect(validateLaunch({ ...ok, website: "http://insecure" }).website).toBeTruthy();
+    for (const v of ["x", "-", ".", "1e-3", "0x10", "-1"]) {
+      expect(validateLaunch({ ...ok, initialBuySol: v }).initialBuySol).toBeTruthy();
+      expect(validateLaunch({ ...ok, fundraiseSol: v }).fundraiseSol).toBeTruthy();
+      expect(validateLaunch({ ...ok, sellPercent: v }).sellPercent).toBeTruthy();
+    }
+    expect(validateLaunch({ ...ok, initialBuySol: ".5", fundraiseSol: "85." })).toEqual({});
+    expect(launchNumbers({ ...ok, initialBuySol: ".5" }).buyLamports).toBe(500_000_000n);
+    expect(validateLaunch({ ...ok, cliffDays: "1.5" }).cliffDays).toBeTruthy();
   });
   it("splits supply exactly: curve + 1% locked + pool seed = supply", () => {
     const n = launchNumbers(ok);

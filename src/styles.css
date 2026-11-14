@@ -64,3 +64,13 @@
 @media (min-width: 48rem) { .watch-item { grid-template-columns: minmax(0, 1fr) auto; align-items: start; } }
 /* Narrow phones: the brand keeps its mark and accessible name; the wordmark yields room to the wallet controls. */
 @media (max-width: 30rem) { .brand span { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
+.subhead { margin: 0; font-size: var(--text-base); font-weight: 600; }
+.dev-alloc { display: grid; gap: var(--space-3); }
+@media (min-width: 48rem) { .watchlist .watch-form { grid-template-columns: 1fr 12rem 9rem auto; } }
+/* Narrow phones: the tools row wraps inside the header instead of pushing past the screen edge. */
+@media (max-width: 30rem) {
+  .header-tools { flex-wrap: wrap; justify-content: flex-end; min-inline-size: 0; max-inline-size: 100%; }
+  .net-select { max-inline-size: 6.5rem; }
+}
+/* Phones: room between the header controls and the headline, so the Connect pill never reads as a label over it. */
+@media (max-width: 59.99rem) { .hero { padding-block-start: var(--space-8); } }

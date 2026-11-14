@@ -61,28 +61,28 @@ export function Composer({ onPlan }: { onPlan: (p: Plan) => void }) {
           <div className="grid-2">
             <div className="field">
               <label htmlFor="pro-name">Token name (optional)</label>
-              <input id="pro-name" data-field="name" autoComplete="off" value={pro.name} onChange={(e) => { setPro({ ...pro, name: e.target.value }); clear("name"); }} aria-invalid={inv("name")} aria-describedby={errors.name ? "name-error" : undefined} />
-              {errors.name && <p id="name-error" className="error">{errors.name}</p>}
+              <input id="pro-name" data-field="name" autoComplete="off" value={pro.name} onChange={(e) => { setPro({ ...pro, name: e.target.value }); clear("name"); }} aria-invalid={inv("name")} aria-describedby={errors.name ? "pro-name-error" : undefined} />
+              {errors.name && <p id="pro-name-error" className="error">{errors.name}</p>}
             </div>
             <div className="field">
               <label htmlFor="pro-ticker">Ticker (optional)</label>
-              <input id="pro-ticker" data-field="ticker" autoComplete="off" autoCapitalize="characters" spellCheck={false} value={pro.ticker} onChange={(e) => { setPro({ ...pro, ticker: e.target.value }); clear("ticker"); }} aria-invalid={inv("ticker")} aria-describedby={errors.ticker ? "ticker-error" : undefined} />
-              {errors.ticker && <p id="ticker-error" className="error">{errors.ticker}</p>}
+              <input id="pro-ticker" data-field="ticker" autoComplete="off" autoCapitalize="characters" spellCheck={false} value={pro.ticker} onChange={(e) => { setPro({ ...pro, ticker: e.target.value }); clear("ticker"); }} aria-invalid={inv("ticker")} aria-describedby={errors.ticker ? "pro-ticker-error" : undefined} />
+              {errors.ticker && <p id="pro-ticker-error" className="error">{errors.ticker}</p>}
             </div>
             <div className="field">
               <label htmlFor="pro-supply">Total supply</label>
-              <input id="pro-supply" data-field="supply" inputMode="numeric" autoComplete="off" value={pro.supply} onChange={(e) => { setPro({ ...pro, supply: e.target.value }); clear("supply"); }} aria-invalid={inv("supply")} aria-describedby={errors.supply ? "supply-error supply-hint" : "supply-hint"} />
-              <p id="supply-hint" className="hint">{DEV_ALLOCATION_PERCENT}% goes to the designated developer; the rest is sold on the bonding curve or seeds the pool.</p>
-              {errors.supply && <p id="supply-error" className="error">{errors.supply}</p>}
+              <input id="pro-supply" data-field="supply" inputMode="numeric" autoComplete="off" value={pro.supply} onChange={(e) => { setPro({ ...pro, supply: e.target.value }); clear("supply"); }} aria-invalid={inv("supply")} aria-describedby={errors.supply ? "pro-supply-error pro-supply-hint" : "pro-supply-hint"} />
+              <p id="pro-supply-hint" className="hint">{DEV_ALLOCATION_PERCENT}% goes to the designated developer; the rest is sold on the bonding curve or seeds the pool.</p>
+              {errors.supply && <p id="pro-supply-error" className="error">{errors.supply}</p>}
             </div>
             <div className="field">
               <label htmlFor="pro-buy">Developer initial purchase (SOL)</label>
-              <input id="pro-buy" data-field="initialBuySol" inputMode="decimal" autoComplete="off" placeholder="0" value={pro.initialBuySol} onChange={(e) => { setPro({ ...pro, initialBuySol: e.target.value }); clear("initialBuySol"); }} aria-invalid={inv("initialBuySol")} aria-describedby={errors.initialBuySol ? "buy-error buy-hint" : "buy-hint"} />
-              <p id="buy-hint" className="hint">Optional, paid from the developer's own SOL, up to {MAX_INITIAL_BUY_SOL} SOL.</p>
-              {errors.initialBuySol && <p id="buy-error" className="error">{errors.initialBuySol}</p>}
+              <input id="pro-buy" data-field="initialBuySol" inputMode="decimal" autoComplete="off" placeholder="0" value={pro.initialBuySol} onChange={(e) => { setPro({ ...pro, initialBuySol: e.target.value }); clear("initialBuySol"); }} aria-invalid={inv("initialBuySol")} aria-describedby={errors.initialBuySol ? "pro-buy-error pro-buy-hint" : "pro-buy-hint"} />
+              <p id="pro-buy-hint" className="hint">Optional, paid from the developer's own SOL, up to {MAX_INITIAL_BUY_SOL} SOL.</p>
+              {errors.initialBuySol && <p id="pro-buy-error" className="error">{errors.initialBuySol}</p>}
             </div>
           </div>
-          <fieldset className="fee-fieldset" aria-describedby={errors.fees ? "fees-error fees-total" : "fees-total"}>
+          <fieldset className="fee-fieldset" aria-describedby={errors.fees ? "pro-fees-error pro-fees-total" : "pro-fees-total"}>
             <legend>Creator fee distribution</legend>
             <div className="grid-3">
               {FEE_FIELDS.map(({ key, label }, i) => (
@@ -92,8 +92,8 @@ export function Composer({ onPlan }: { onPlan: (p: Plan) => void }) {
                 </div>
               ))}
             </div>
-            <p id="fees-total" className={total === 100 ? "hint" : "hint hint-warn"}>Total: <span className="num">{total}%</span> of 100%. Applies where the launch protocol supports fee sharing.</p>
-            {errors.fees && <p id="fees-error" className="error">{errors.fees}</p>}
+            <p id="pro-fees-total" className={total === 100 ? "hint" : "hint hint-warn"}>Total: <span className="num">{total}%</span> of 100%. Applies where the launch protocol supports fee sharing.</p>
+            {errors.fees && <p id="pro-fees-error" className="error">{errors.fees}</p>}
           </fieldset>
         </div>
       )}
